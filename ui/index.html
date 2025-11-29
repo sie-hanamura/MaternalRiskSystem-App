@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MRAS</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+</head>
+<body>
+    <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <img src="../assets/logo-white.png" alt="MRAS" class="heart-icon-img">
+                <div class="logo-text">MRAS</div>
+            </div>
+        
+        <nav class="nav-menu">
+            <button class="nav-btn active" data-view="assessment">
+                <img src="../assets/clipboard.png" alt="" class="nav-icon" style="width: 24px; height: 24px; object-fit: contain; margin-right: 12px;">
+                New Assessment
+            </button>
+            <button class="nav-btn" data-view="history">
+                <img src="../assets/history.png" alt="" class="nav-icon" style="width: 24px; height: 24px; object-fit: contain; margin-right: 12px;">
+                History
+            </button>
+            <button class="nav-btn" data-view="about">
+                <img src="../assets/info-white.png" alt="" class="nav-icon" style="width: 22px; height: 22px; object-fit: contain; margin-right: 12px;">
+                About
+            </button>
+        </nav>
+        
+        <div class="version">v2.1.4</div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-text">
+                <h1>MATERNAL RISK ASSESSMENT SYSTEM</h1>
+                <p class="subtitle">Municipal Health Office Bay, Laguna | AI-Assisted Screening Tool</p>
+            </div>
+            <div class="header-actions">
+                <div class="user-avatar">U</div>
+            </div>
+        </header>
+
+        <!-- Assessment View -->
+        <div id="assessment-view" class="view active">
+            <div class="content-grid">
+                <!-- Left Column -->
+                <div class="left-column">
+                    <!-- Patient Information Card -->
+                    <div class="card">
+                        <h3 class="card-title">Patient Information</h3>
+                        <div class="date-display" id="current-date"></div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Patient ID</label>
+                                <input type="text" id="patient-id" placeholder="e.g., P-2024-001">
+                            </div>
+                            <div class="form-group">
+                                <label>Health Worker</label>
+                                <input type="text" id="health-worker" placeholder="Your name">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Clinical Measurements Card -->
+                    <div class="card">
+                        <h3 class="card-title">Clinical Measurements</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Age (years) <span class="hint">Normal: 18-35</span></label>
+                                <input type="number" id="age" value="25" min="15" max="49">
+                            </div>
+                            <div class="form-group">
+                                <label>Weight (kg)</label>
+                                <input type="number" id="weight" value="60" min="30" max="150" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label>Height (cm)</label>
+                                <input type="number" id="height" value="160" min="130" max="200" step="0.1">
+                            </div>
+                        </div>
+
+                        <div class="bmi-display">
+                            <span>BMI:</span>
+                            <span class="bmi-value" id="bmi-value">23.4</span>
+                            <span class="bmi-status" id="bmi-status">Normal</span>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Systolic BP (mmHg) <span class="hint">Normal: 90-120</span></label>
+                                <input type="number" id="systolic" value="120" min="90" max="180">
+                            </div>
+                            <div class="form-group">
+                                <label>Diastolic BP (mmHg) <span class="hint">Normal: 60-80</span></label>
+                                <input type="number" id="diastolic" value="80" min="60" max="120">
+                            </div>
+                        </div>
+
+                        <h4 class="section-title">Laboratory Test Results</h4>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="lab-available" checked>
+                            Laboratory results available
+                        </label>
+
+                        <div class="form-row" id="lab-inputs">
+                            <div class="form-group">
+                                <label>Blood Sugar (mmol/L) <span class="hint">Normal: 4.0-7.0</span></label>
+                                <input type="number" id="blood-sugar" value="5.5" min="4.0" max="18.0" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label>Hemoglobin (g/dL) <span class="hint">Normal: 11.0-14.0</span></label>
+                                <input type="number" id="hemoglobin" value="12.0" min="9.5" max="14.0" step="0.1">
+                            </div>
+                        </div>
+
+                        <div class="model-indicator" id="model-indicator">
+                            <img src="../assets/info-circle.png" alt="" class="info-icon" style="width: 16px; height: 16px; margin-right: 12px;">
+                            Using: Full Model (5 features) - 90.6% accuracy
+                        </div>
+                    </div>
+
+                    <button class="primary-btn" id="calculate-btn">
+                        Calculate Risk Assessment
+                    </button>
+                </div>
+
+                <!-- Right Column - Results -->
+                <div class="right-column">
+                    <div class="card results-card" id="results-card" style="display: none;">
+                        <h3 class="card-title">Assessment Results</h3>
+                        
+                        <div class="risk-display">
+                            <div class="risk-level" id="risk-level">LOW RISK</div>
+                            <div class="gauge-container">
+                                <svg class="risk-gauge" viewBox="0 0 200 120">
+                                    <path class="gauge-bg" d="M 20,100 A 80,80 0 0,1 180,100"></path>
+                                    <path class="gauge-fill" id="gauge-fill" d="M 20,100 A 80,80 0 0,1 180,100"></path>
+                                </svg>
+                                <div class="gauge-text">
+                                    <div class="gauge-percentage" id="gauge-percentage">52%</div>
+                                    <div class="gauge-label">Confidence Level</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="probability-section">
+                            <h4 class="section-title">Probability Breakdown</h4>
+                            <div class="prob-bar">
+                                <div class="prob-label">
+                                    <span>✅ Low Risk</span>
+                                    <span id="prob-low">0%</span>
+                                </div>
+                                <div class="prob-track">
+                                    <div class="prob-fill low" id="prob-bar-low"></div>
+                                </div>
+                            </div>
+                            <div class="prob-bar">
+                                <div class="prob-label">
+                                    <span>⚠️ Moderate Risk</span>
+                                    <span id="prob-moderate">0%</span>
+                                </div>
+                                <div class="prob-track">
+                                    <div class="prob-fill moderate" id="prob-bar-moderate"></div>
+                                </div>
+                            </div>
+                            <div class="prob-bar">
+                                <div class="prob-label">
+                                    <span>🚨 High Risk</span>
+                                    <span id="prob-high">0%</span>
+                                </div>
+                                <div class="prob-track">
+                                    <div class="prob-fill high" id="prob-bar-high"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4 class="section-title">Recommended Actions</h4>
+                        <div class="recommendations" id="recommendations"></div>
+
+                        <div class="action-buttons">
+                            <button class="success-btn" id="save-btn">💾 Save Assessment</button>
+                            <button class="secondary-btn" id="print-btn">🖨️ Print Report</button>
+                            <button class="outline-btn" id="new-btn">📝 New Assessment</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History View -->
+        <div id="history-view" class="view">
+            <div class="history-header">
+                <h2>📊 Assessment History</h2>
+                <button class="secondary-btn" id="export-btn">📥 Export to CSV</button>
+            </div>
+            <table class="history-table" id="history-table">
+                <thead>
+                    <tr>
+                        <th>Date/Time</th>
+                        <th>Patient ID</th>
+                        <th>Age</th>
+                        <th>BMI</th>
+                        <th>Risk Level</th>
+                        <th>Confidence</th>
+                        <th>Model Used</th>
+                        <th>Health Worker</th>
+                    </tr>
+                </thead>
+                <tbody id="history-tbody">
+                    <!-- Populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- About View -->
+        <div id="about-view" class="view">
+            <div class="card about-card">
+                <h2><img src="../assets/pregnant.png" alt="" style="width: 40px; height: 42px; vertical-align: middle; margin-right: 2px;">Maternal Risk Assessment System</h2>
+                <h3>Municipal Health Office Bay, Laguna</h3>
+                
+                <p><b>Version:</b> 2.0 (Dual Model System)</p>
+                <p><b>Training Data:</b> 986 maternal health records</p>
+                
+                <hr>
+                
+                <h3>Dual Model System</h3>
+                <div class="model-info full">
+                    <h4>Model A - Full Model (5 Features)</h4>
+                    <p><b>Accuracy:</b> 90.6% (Balanced: 90.58%)</p>
+                    <p><b>Type:</b> Logistic Regression</p>
+                    <p><b>Features:</b> BMI, Systolic BP, Blood Sugar, Hemoglobin, Diastolic BP</p>
+                    <p><b>Use When:</b> Lab test results available</p>
+                </div>
+                
+                <div class="model-info basic">
+                    <h4>Model B - Basic Model (3 Features)</h4>
+                    <p><b>Accuracy:</b> ~85%</p>
+                    <p><b>Type:</b> Logistic Regression</p>
+                    <p><b>Features:</b> BMI, Systolic BP, Diastolic BP</p>
+                    <p><b>Use When:</b> Lab results NOT available</p>
+                    <p><b>Note:</b> Preliminary screening. Lab tests recommended for moderate/high risk.</p>
+                </div>
+                
+                <hr>
+                
+                <h3>⚠️ Important Notes</h3>
+                <ul>
+                    <li>This is a <b>screening tool</b>, not a diagnostic system</li>
+                    <li>Always follow clinical judgment and protocols</li>
+                    <li>High-risk cases must be referred to medical professionals</li>
+                    <li>System works completely offline</li>
+                </ul>
+                
+                <hr>
+                
+                <p style="font-style: italic;">Developed for improving maternal health outcomes in rural communities.</p>
+                <p><b>For support:</b> Municipal Health Office Bay, Laguna</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
