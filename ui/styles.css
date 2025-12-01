@@ -28,11 +28,18 @@ body {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.logo-text {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    margin-bottom: 16px;  /* Space between MRAS text and image */
+}
+
 .heart-icon-img {
     width: 160px;
     height: auto;
-    margin-bottom: 20px;
     object-fit: contain;
+    margin-bottom: 0;  /* Remove bottom margin since text is now above */
 }
 
 .heart-icon {
@@ -40,11 +47,6 @@ body {
     margin-bottom: 10px;
 }
 
-.logo-text {
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: 0.8px;
-}
 
 .nav-menu {
     flex: 1;
@@ -126,6 +128,120 @@ body {
     font-size: 12px;
     color: #6b7280;
     font-weight: 400;
+}
+
+/* ===== SETTINGS DROPDOWN ===== */
+.settings-container {
+    position: relative;
+    margin-left: 8px;
+}
+
+.settings-btn {
+    background: transparent;
+    border: none;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.settings-btn:hover {
+    transform: translateY(-2px);
+}
+
+.settings-btn:active {
+    transform: translateY(0);
+}
+
+.settings-icon {
+    width: 28px;
+    height: 28px;
+    transition: transform 0.3s ease;
+}
+
+.settings-btn:hover .settings-icon {
+    transform: rotate(90deg);
+}
+
+/* Dropdown Menu */
+.settings-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
+    min-width: 220px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.settings-dropdown.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-section {
+    padding: 8px 0;
+}
+
+.dropdown-header {
+    padding: 10px 16px 8px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.dropdown-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-size: 14px;
+    color: #1f2937;
+    text-align: left;
+    position: relative;
+}
+
+.dropdown-item:hover {
+    background: #f3f4f6;
+}
+
+.lang-flag {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.checkmark {
+    margin-left: auto;
+    font-weight: 700;
+    color: #36ABA3;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.checkmark.visible {
+    opacity: 1;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 24px;
 }
 
 .user-avatar {
@@ -630,7 +746,7 @@ input[type="checkbox"] {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
 }
 
 .history-header h2 {
@@ -641,39 +757,39 @@ input[type="checkbox"] {
 
 .history-header .secondary-btn {
     width: auto;
-    padding: 10px 20px;
+    padding: 11px 20px;
     margin: 0;
 }
 
 .history-table {
     width: 100%;
     background: white;
-    border-radius: 16px;
+    border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .history-table th {
-    background: #f8f9fa;
-    padding: 16px;
+    background: #36ABA3;
+    padding: 14px 18px;
     text-align: left;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
-    color: #374151;
+    color: white;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    border-bottom: 2px solid #e5e7eb;
+    letter-spacing: 0.6px;
 }
 
 .history-table td {
-    padding: 16px;
-    font-size: 13px;
-    color: #475569;
-    border-bottom: 1px solid #f3f4f6;
+    padding: 16px 18px;
+    font-size: 14px;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 500;
 }
 
 .history-table tbody tr:hover {
-    background: #f9fafb;
+    background: #f0faf9;
 }
 
 .history-table tbody tr:last-child td {
@@ -682,10 +798,12 @@ input[type="checkbox"] {
 
 .risk-badge {
     display: inline-block;
-    padding: 4px 12px;
+    padding: 5px 12px;
     border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .risk-badge.low {

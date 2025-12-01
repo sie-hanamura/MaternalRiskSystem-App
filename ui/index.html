@@ -11,22 +11,23 @@
     <!-- Sidebar -->
         <div class="sidebar">
             <div class="logo">
-                <img src="../assets/logo-white.png" alt="MRAS" class="heart-icon-img">
                 <div class="logo-text">MRAS</div>
+                <img src="../assets/logo-white.png" alt="MRAS" class="heart-icon-img">
+                
             </div>
         
         <nav class="nav-menu">
             <button class="nav-btn active" data-view="assessment">
                 <img src="../assets/clipboard.png" alt="" class="nav-icon" style="width: 24px; height: 24px; object-fit: contain; margin-right: 12px;">
-                New Assessment
+                <span data-i18n="nav-new-assessment">New Assessment</span>
             </button>
             <button class="nav-btn" data-view="history">
                 <img src="../assets/history.png" alt="" class="nav-icon" style="width: 24px; height: 24px; object-fit: contain; margin-right: 12px;">
-                History
+                <span data-i18n="nav-history">History</span>
             </button>
             <button class="nav-btn" data-view="about">
                 <img src="../assets/info-white.png" alt="" class="nav-icon" style="width: 22px; height: 22px; object-fit: contain; margin-right: 12px;">
-                About
+                <span data-i18n="nav-about">About</span>
             </button>
         </nav>
         
@@ -38,11 +39,33 @@
         <!-- Header -->
         <header class="header">
             <div class="header-text">
-                <h1>MATERNAL RISK ASSESSMENT SYSTEM</h1>
-                <p class="subtitle">Municipal Health Office Bay, Laguna | AI-Assisted Screening Tool</p>
+                <h1 data-i18n="app-title">MATERNAL RISK ASSESSMENT SYSTEM</h1>
+                <p class="subtitle" data-i18n="app-subtitle">Municipal Health Office Bay, Laguna | AI-Assisted Screening Tool</p>
             </div>
-            <div class="header-actions">
-                <div class="user-avatar">U</div>
+                <div class="header-actions">
+                <div class="user-avatar">M</div>
+
+                <!-- Settings Dropdown -->
+                <div class="settings-container">
+                    <button class="settings-btn" id="settings-btn" title="Settings / Mga Setting">
+                        <img src="../assets/settings.png" alt="Settings" class="settings-icon">
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div class="settings-dropdown" id="settings-dropdown">
+                        <div class="dropdown-section">
+                            <div class="dropdown-header" data-i18n="settings-language">Language / Wika</div>
+                            <button class="dropdown-item" id="lang-en" data-lang="en">
+                                <span data-i18n="lang-english">English</span>
+                                <span class="checkmark" id="check-en">✓</span>
+                            </button>
+                            <button class="dropdown-item" id="lang-fil" data-lang="fil">
+                                <span data-i18n="lang-filipino">Filipino</span>
+                                <span class="checkmark" id="check-fil">✓</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </header>
 
@@ -53,35 +76,35 @@
                 <div class="left-column">
                     <!-- Patient Information Card -->
                     <div class="card">
-                        <h3 class="card-title">Patient Information</h3>
+                        <h3 class="card-title" data-i18n="patient-info-title">Patient Information</h3>
                         <div class="date-display" id="current-date"></div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Patient ID</label>
-                                <input type="text" id="patient-id" placeholder="e.g., P-2024-001">
+                                <label data-i18n="label-patient-id">Patient ID</label>
+                                <input type="text" id="patient-id" data-i18n-placeholder="placeholder-patient-id" placeholder="e.g., P-2024-001">
                             </div>
                             <div class="form-group">
-                                <label>Health Worker</label>
-                                <input type="text" id="health-worker" placeholder="Your name">
+                                <label data-i18n="label-health-worker">Health Worker</label>
+                                <input type="text" id="health-worker" data-i18n-placeholder="placeholder-health-worker" placeholder="Your name">
                             </div>
                         </div>
                     </div>
 
                     <!-- Clinical Measurements Card -->
                     <div class="card">
-                        <h3 class="card-title">Clinical Measurements</h3>
-                        
+                        <h3 class="card-title" data-i18n="clinical-measurements-title">Clinical Measurements</h3>
+
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Age (years) <span class="hint">Normal: 18-35</span></label>
+                                <label data-i18n="label-age">Age (years) <span class="hint" data-i18n="hint-age">Normal: 18-35</span></label>
                                 <input type="number" id="age" value="25" min="15" max="49">
                             </div>
                             <div class="form-group">
-                                <label>Weight (kg)</label>
+                                <label data-i18n="label-weight">Weight (kg)</label>
                                 <input type="number" id="weight" value="60" min="30" max="150" step="0.1">
                             </div>
                             <div class="form-group">
-                                <label>Height (cm)</label>
+                                <label data-i18n="label-height">Height (cm)</label>
                                 <input type="number" id="height" value="160" min="130" max="200" step="0.1">
                             </div>
                         </div>
@@ -89,44 +112,44 @@
                         <div class="bmi-display">
                             <span>BMI:</span>
                             <span class="bmi-value" id="bmi-value">23.4</span>
-                            <span class="bmi-status" id="bmi-status">Normal</span>
+                            <span class="bmi-status" id="bmi-status" data-i18n="bmi-normal">Normal</span>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Systolic BP (mmHg) <span class="hint">Normal: 90-120</span></label>
+                                <label data-i18n="label-systolic">Systolic BP (mmHg) <span class="hint" data-i18n="hint-systolic">Normal: 90-120</span></label>
                                 <input type="number" id="systolic" value="120" min="90" max="180">
                             </div>
                             <div class="form-group">
-                                <label>Diastolic BP (mmHg) <span class="hint">Normal: 60-80</span></label>
+                                <label data-i18n="label-diastolic">Diastolic BP (mmHg) <span class="hint" data-i18n="hint-diastolic">Normal: 60-80</span></label>
                                 <input type="number" id="diastolic" value="80" min="60" max="120">
                             </div>
                         </div>
 
-                        <h4 class="section-title">Laboratory Test Results</h4>
+                        <h4 class="section-title" data-i18n="lab-results-title">Laboratory Test Results</h4>
                         <label class="checkbox-label">
                             <input type="checkbox" id="lab-available" checked>
-                            Laboratory results available
+                            <span data-i18n="lab-available-text">Laboratory results available</span>
                         </label>
 
                         <div class="form-row" id="lab-inputs">
                             <div class="form-group">
-                                <label>Blood Sugar (mmol/L) <span class="hint">Normal: 4.0-7.0</span></label>
+                                <label data-i18n="label-blood-sugar">Blood Sugar (mmol/L) <span class="hint" data-i18n="hint-blood-sugar">Normal: 4.0-7.0</span></label>
                                 <input type="number" id="blood-sugar" value="5.5" min="4.0" max="18.0" step="0.1">
                             </div>
                             <div class="form-group">
-                                <label>Hemoglobin (g/dL) <span class="hint">Normal: 11.0-14.0</span></label>
+                                <label data-i18n="label-hemoglobin">Hemoglobin (g/dL) <span class="hint" data-i18n="hint-hemoglobin">Normal: 11.0-14.0</span></label>
                                 <input type="number" id="hemoglobin" value="12.0" min="9.5" max="14.0" step="0.1">
                             </div>
                         </div>
 
                         <div class="model-indicator" id="model-indicator">
                             <img src="../assets/info-circle.png" alt="" class="info-icon" style="width: 16px; height: 16px; margin-right: 12px;">
-                            Using: Full Model (5 features) - 90.6% accuracy
+                            <span data-i18n="model-full">Using: Full Model (5 features) - 90.6% accuracy</span>
                         </div>
                     </div>
 
-                    <button class="primary-btn" id="calculate-btn">
+                    <button class="primary-btn" id="calculate-btn" data-i18n="btn-calculate">
                         Calculate Risk Assessment
                     </button>
                 </div>
@@ -134,8 +157,8 @@
                 <!-- Right Column - Results -->
                 <div class="right-column">
                     <div class="card results-card" id="results-card" style="display: none;">
-                        <h3 class="card-title">Assessment Results</h3>
-                        
+                        <h3 class="card-title" data-i18n="results-title">Assessment Results</h3>
+
                         <div class="risk-display">
                             <div class="risk-level" id="risk-level">LOW RISK</div>
                             <div class="gauge-container">
@@ -145,16 +168,16 @@
                                 </svg>
                                 <div class="gauge-text">
                                     <div class="gauge-percentage" id="gauge-percentage">52%</div>
-                                    <div class="gauge-label">Confidence Level</div>
+                                    <div class="gauge-label" data-i18n="confidence-level">Confidence Level</div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="probability-section">
-                            <h4 class="section-title">Probability Breakdown</h4>
+                            <h4 class="section-title" data-i18n="probability-breakdown">Probability Breakdown</h4>
                             <div class="prob-bar">
                                 <div class="prob-label">
-                                    <span>✅ Low Risk</span>
+                                    <span data-i18n="prob-low-risk">✅ Low Risk</span>
                                     <span id="prob-low">0%</span>
                                 </div>
                                 <div class="prob-track">
@@ -163,7 +186,7 @@
                             </div>
                             <div class="prob-bar">
                                 <div class="prob-label">
-                                    <span>⚠️ Moderate Risk</span>
+                                    <span data-i18n="prob-moderate-risk">⚠️ Moderate Risk</span>
                                     <span id="prob-moderate">0%</span>
                                 </div>
                                 <div class="prob-track">
@@ -172,7 +195,7 @@
                             </div>
                             <div class="prob-bar">
                                 <div class="prob-label">
-                                    <span>🚨 High Risk</span>
+                                    <span data-i18n="prob-high-risk">🚨 High Risk</span>
                                     <span id="prob-high">0%</span>
                                 </div>
                                 <div class="prob-track">
@@ -181,13 +204,13 @@
                             </div>
                         </div>
 
-                        <h4 class="section-title">Recommended Actions</h4>
+                        <h4 class="section-title" data-i18n="recommended-actions">Recommended Actions</h4>
                         <div class="recommendations" id="recommendations"></div>
 
                         <div class="action-buttons">
-                            <button class="success-btn" id="save-btn">💾 Save Assessment</button>
-                            <button class="secondary-btn" id="print-btn">🖨️ Print Report</button>
-                            <button class="outline-btn" id="new-btn">📝 New Assessment</button>
+                            <button class="success-btn" id="save-btn" data-i18n="btn-save">💾 Save Assessment</button>
+                            <button class="secondary-btn" id="print-btn" data-i18n="btn-print">🖨️ Print Report</button>
+                            <button class="outline-btn" id="new-btn" data-i18n="btn-new">📝 New Assessment</button>
                         </div>
                     </div>
                 </div>
@@ -197,20 +220,20 @@
         <!-- History View -->
         <div id="history-view" class="view">
             <div class="history-header">
-                <h2>📊 Assessment History</h2>
-                <button class="secondary-btn" id="export-btn">📥 Export to CSV</button>
+                <h2 data-i18n="history-title">📊 Assessment History</h2>
+                <button class="secondary-btn" id="export-btn" data-i18n="btn-export">📥 Export to CSV</button>
             </div>
             <table class="history-table" id="history-table">
                 <thead>
                     <tr>
-                        <th>Date/Time</th>
-                        <th>Patient ID</th>
-                        <th>Age</th>
+                        <th data-i18n="table-datetime">Date/Time</th>
+                        <th data-i18n="table-patient-id">Patient ID</th>
+                        <th data-i18n="table-age">Age</th>
                         <th>BMI</th>
-                        <th>Risk Level</th>
-                        <th>Confidence</th>
-                        <th>Model Used</th>
-                        <th>Health Worker</th>
+                        <th data-i18n="table-risk-level">Risk Level</th>
+                        <th data-i18n="table-confidence">Confidence</th>
+                        <th data-i18n="table-model-used">Model Used</th>
+                        <th data-i18n="table-health-worker">Health Worker</th>
                     </tr>
                 </thead>
                 <tbody id="history-tbody">
