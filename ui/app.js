@@ -601,12 +601,48 @@ function saveAssessment() {
         alert('No assessment to save. Please calculate risk first.');
         return;
     }
-    
+
     const result = window.currentAssessment;
-    
-    // Ensure all values have correct types
-    const patientId = String(document.getElementById('patient-id').value || 'N/A');
-    const healthWorker = String(document.getElementById('health-worker').value || 'N/A');
+
+    // Get Patient ID from input field
+    let patientIdInput = document.getElementById('patient-id').value.trim();
+
+    // If Patient ID is empty, generate one automatically
+    if (!patientIdInput || patientIdInput === '' || patientIdInput === 'N/A') {
+        console.log('Patient ID is empty, generating auto ID...');
+
+        // Call backend to generate Patient ID
+        backend.generate_patient_id(function(response) {
+            try {
+                const idResult = JSON.parse(response);
+                if (idResult.success && idResult.patient_id) {
+                    // Update the input field with generated ID
+                    document.getElementById('patient-id').value = idResult.patient_id;
+                    console.log('✓ Generated Patient ID:', idResult.patient_id);
+
+                    // Now proceed with saving using the generated ID
+                    proceedWithSave(idResult.patient_id, result);
+                } else {
+                    // Fallback to default if generation fails
+                    const fallbackId = idResult.patient_id || 'P-2025-0001';
+                    document.getElementById('patient-id').value = fallbackId;
+                    console.warn('⚠ Using fallback Patient ID:', fallbackId);
+                    proceedWithSave(fallbackId, result);
+                }
+            } catch (e) {
+                console.error('Error parsing generate_patient_id response:', e);
+                alert('Error generating Patient ID. Please enter manually.');
+            }
+        });
+    } else {
+        // Patient ID provided, save directly
+        proceedWithSave(patientIdInput, result);
+    }
+}
+
+// Helper function to proceed with saving assessment
+function proceedWithSave(patientId, result) {
+    const healthWorker = document.getElementById('health-worker').value.trim() || 'N/A';
     const age = parseInt(document.getElementById('age').value) || 25;
     const bmi = parseFloat(result.bmi) || 0.0;
     const systolic = parseFloat(document.getElementById('systolic').value) || 120;
@@ -617,28 +653,13 @@ function saveAssessment() {
     const confidence = parseFloat(result.confidence) || 0.0;
     const modelUsed = String(result.model_used);
     const labAvailable = Boolean(result.lab_available);
-    
+
     // Debug log
-    console.log("Saving with types:", {
-        patientId: typeof patientId,
-        healthWorker: typeof healthWorker,
-        age: typeof age,
-        bmi: typeof bmi,
-        systolic: typeof systolic,
-        diastolic: typeof diastolic,
-        bloodSugar: typeof bloodSugar,
-        hemoglobin: typeof hemoglobin,
-        riskLevel: typeof riskLevel,
-        confidence: typeof confidence,
-        modelUsed: typeof modelUsed,
-        labAvailable: typeof labAvailable
-    });
-    
-    backend.save_assessment(
-        String(patientId || 'N/A'),      // Always string
-        String(healthWorker || 'N/A'),   // Always string  
-        parseInt(age) || 25,             // Always number
-        parseFloat(result.bmi) || 0,     // Always number
+    console.log("Saving assessment with data:", {
+        patientId,
+        healthWorker,
+        age,
+        bmi,
         systolic,
         diastolic,
         bloodSugar,
@@ -646,15 +667,57 @@ function saveAssessment() {
         riskLevel,
         confidence,
         modelUsed,
-        labAvailable,
+        labAvailable
+    });
+
+    backend.save_assessment(
+        String(patientId),
+        String(healthWorker),
+        parseInt(age),
+        parseFloat(bmi),
+        parseFloat(systolic),
+        parseFloat(diastolic),
+        parseFloat(bloodSugar),
+        parseFloat(hemoglobin),
+        String(riskLevel),
+        parseFloat(confidence),
+        String(modelUsed),
+        labAvailable ? 1 : 0,
         function(response) {
-            console.log("Response:", response);
+            console.log("=== Save Response Received ===");
+            console.log("Raw response:", response);
+            console.log("Response type:", typeof response);
+            console.log("Response length:", response ? response.length : 0);
+
             try {
+                // Check for empty response
+                if (!response || (typeof response === 'string' && response.trim() === '')) {
+                    console.error('✗ Empty response from backend - slot may not have executed');
+                    throw new Error('Empty response from backend. The save_assessment method may not have been called. Check Python console for slot signature errors.');
+                }
+
+                // Try to parse JSON
                 const res = JSON.parse(response);
-                alert(res.success ? '✓ Assessment saved successfully!' : 'Error: ' + res.error);
+                console.log("Parsed response:", res);
+
+                if (res.success) {
+                    alert('✓ Assessment saved successfully!\n\nPatient ID: ' + res.patient_id);
+                    console.log('✓ Assessment saved successfully');
+                } else {
+                    alert('Error saving assessment:\n' + (res.error || 'Unknown error'));
+                    console.error('Save error:', res.error);
+                    if (res.details) {
+                        console.error('Error details:', res.details);
+                    }
+                }
             } catch (e) {
-                alert('Parse error: ' + e);
-                console.error('Parse error:', e, 'Response was:', response);
+                console.error('✗ Parse error:', e);
+                console.error('✗ Response was:', response);
+                alert('CRITICAL ERROR: Failed to save assessment.\n\n' +
+                      'Error: ' + e.message + '\n\n' +
+                      'This usually means the Python method signature does not match.\n' +
+                      'Check the Python console for "@pyqtSlot" errors.\n\n' +
+                      'Response: ' + (response || '(empty)'));
             }
         }
     );

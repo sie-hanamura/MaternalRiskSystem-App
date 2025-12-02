@@ -759,6 +759,15 @@ input[type="checkbox"] {
     width: auto;
     padding: 11px 20px;
     margin: 0;
+    background: white;
+    color: #36ABA3;
+    border: 1px solid #36ABA3;
+}
+
+.history-header .secondary-btn:hover {
+    background: #f0faf9;
+    border-color: #2d9891;
+    color: #2d9891;
 }
 
 .history-table {

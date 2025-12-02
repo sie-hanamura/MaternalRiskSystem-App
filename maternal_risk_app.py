@@ -10,6 +10,12 @@ import pickle
 import json
 import pandas as pd
 from datetime import datetime
+
+# Fix Windows console encoding for Unicode characters
+if sys.platform == 'win32':
+    import codecs
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
+    sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QFileDialog
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWebChannel import QWebChannel
@@ -601,55 +607,142 @@ class Backend(QObject):
             print(f"✗ PDF generation error: {error_msg}")
             return json.dumps({'success': False, 'error': str(e)})
     
-    @pyqtSlot(str, str, int, float, float, float, float, float, str, float, str, bool, result=str)
-    def save_assessment(self, patient_id, health_worker, age, bmi, systolic, 
-                        diastolic, blood_sugar, hemoglobin, risk_level, 
-                        confidence, model_used, lab_available):
-        """Save assessment to CSV"""
-        # Add debug print
-        print(f"\n{'='*60}")
-        print(f"save_assessment CALLED")
-        print(f"patient_id: {patient_id!r} ({type(patient_id).__name__})")
-        print(f"health_worker: {health_worker!r} ({type(health_worker).__name__})")
-        print(f"age: {age!r} ({type(age).__name__})")
-        print(f"bmi: {bmi!r} ({type(bmi).__name__})")
-        print(f"lab_available: {lab_available!r} ({type(lab_available).__name__})")
-        print(f"{'='*60}\n")
-        
+    @pyqtSlot(result=str)
+    def generate_patient_id(self):
+        """Generate unique Patient ID in format P-YYYY-NNNN"""
         try:
+            current_year = datetime.now().year
+            history_file = 'assessment_history.csv'
+
+            # Default starting number
+            next_number = 1
+
+            if os.path.exists(history_file):
+                df = pd.read_csv(history_file)
+
+                if not df.empty and 'Patient_ID' in df.columns:
+                    # Filter Patient IDs for current year (format: P-YYYY-NNNN)
+                    year_prefix = f"P-{current_year}-"
+                    current_year_ids = df[df['Patient_ID'].astype(str).str.startswith(year_prefix)]
+
+                    if not current_year_ids.empty:
+                        # Extract numbers from IDs like P-2025-0123 -> 123
+                        numbers = []
+                        for pid in current_year_ids['Patient_ID']:
+                            try:
+                                # Split by '-' and get the last part, convert to int
+                                num = int(str(pid).split('-')[-1])
+                                numbers.append(num)
+                            except (ValueError, IndexError):
+                                continue
+
+                        if numbers:
+                            next_number = max(numbers) + 1
+
+            # Format: P-YYYY-NNNN (e.g., P-2025-0001)
+            patient_id = f"P-{current_year}-{next_number:04d}"
+
+            print(f"✓ Generated Patient ID: {patient_id}")
+            return json.dumps({
+                'success': True,
+                'patient_id': patient_id
+            })
+
+        except Exception as e:
+            import traceback
+            error_msg = traceback.format_exc()
+            print(f"✗ Error generating Patient ID: {error_msg}")
+            return json.dumps({
+                'success': False,
+                'error': str(e),
+                'patient_id': f"P-{datetime.now().year}-0001"  # Fallback
+            })
+
+    @pyqtSlot(str, str, int, float, float, float, float, float, str, float, str, 'QVariant', result=str)
+    def save_assessment(self, patient_id, health_worker, age, bmi, systolic,
+                        diastolic, blood_sugar, hemoglobin, risk_level,
+                        confidence, model_used, lab_available):
+        """Save assessment to CSV with proper type handling
+
+        Args:
+            patient_id (str): Patient identifier
+            health_worker (str): Health worker name
+            age (int): Patient age
+            bmi (float): Body Mass Index
+            systolic (float): Systolic blood pressure
+            diastolic (float): Diastolic blood pressure
+            blood_sugar (float): Blood sugar level
+            hemoglobin (float): Hemoglobin level
+            risk_level (str): Risk assessment result
+            confidence (float): Confidence percentage
+            model_used (str): Model identifier
+            lab_available (QVariant): Any type - 1/0, true/false, or boolean from JavaScript
+
+        Returns:
+            str: JSON response with success/error status
+        """
+        try:
+            # Debug print - verify method is being called
+            print(f"\n{'='*60}")
+            print(f"✓ save_assessment METHOD CALLED SUCCESSFULLY")
+            print(f"patient_id: {patient_id!r} ({type(patient_id).__name__})")
+            print(f"health_worker: {health_worker!r} ({type(health_worker).__name__})")
+            print(f"age: {age!r} ({type(age).__name__})")
+            print(f"bmi: {bmi!r} ({type(bmi).__name__})")
+            print(f"systolic: {systolic!r} ({type(systolic).__name__})")
+            print(f"diastolic: {diastolic!r} ({type(diastolic).__name__})")
+            print(f"blood_sugar: {blood_sugar!r} ({type(blood_sugar).__name__})")
+            print(f"hemoglobin: {hemoglobin!r} ({type(hemoglobin).__name__})")
+            print(f"risk_level: {risk_level!r} ({type(risk_level).__name__})")
+            print(f"confidence: {confidence!r} ({type(confidence).__name__})")
+            print(f"model_used: {model_used!r} ({type(model_used).__name__})")
+            print(f"lab_available: {lab_available!r} ({type(lab_available).__name__})")
+            print(f"{'='*60}\n")
+
+            # Convert lab_available from int (0/1) to boolean
+            lab_bool = bool(lab_available)
+
             record = {
                 'Timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                'Patient_ID': patient_id if patient_id else 'N/A',
+                'Patient_ID': str(patient_id).strip() if patient_id and str(patient_id).strip() not in ['', 'N/A'] else 'N/A',
                 'Age': int(age),
                 'BMI': float(bmi),
                 'SystolicBP': float(systolic),
                 'DiastolicBP': float(diastolic),
-                'Blood_Sugar': float(blood_sugar) if lab_available else None,
-                'Hemoglobin': float(hemoglobin) if lab_available else None,
-                'Risk_Level': risk_level,
-                'Confidence': f"{confidence:.1f}%",
-                'Model_Used': model_used,
-                'Lab_Available': 'Yes' if lab_available else 'No',
-                'Health_Worker': health_worker if health_worker else 'N/A'
+                'Blood_Sugar': float(blood_sugar) if lab_bool else None,
+                'Hemoglobin': float(hemoglobin) if lab_bool else None,
+                'Risk_Level': str(risk_level),
+                'Confidence': f"{float(confidence):.1f}%",
+                'Model_Used': str(model_used),
+                'Lab_Available': 'Yes' if lab_bool else 'No',
+                'Health_Worker': str(health_worker).strip() if health_worker and str(health_worker).strip() not in ['', 'N/A'] else 'N/A'
             }
-            
+
             history_file = 'assessment_history.csv'
             if os.path.exists(history_file):
                 df = pd.read_csv(history_file)
                 df = pd.concat([df, pd.DataFrame([record])], ignore_index=True)
             else:
                 df = pd.DataFrame([record])
-            
+
             df.to_csv(history_file, index=False, na_rep='N/A')
-            
+
             print(f"✓ Assessment saved: Patient {patient_id}")
-            return json.dumps({'success': True, 'message': 'Assessment saved successfully'})
-            
+            return json.dumps({
+                'success': True,
+                'message': 'Assessment saved successfully',
+                'patient_id': record['Patient_ID']
+            })
+
         except Exception as e:
             import traceback
             error_msg = traceback.format_exc()
             print(f"✗ Save error: {error_msg}")
-            return json.dumps({'success': False, 'error': str(e)})
+            return json.dumps({
+                'success': False,
+                'error': str(e),
+                'details': error_msg
+            })
     
     @pyqtSlot(result=str)
     def load_history(self):

@@ -1,0 +1,10 @@
+Case 1:  Age 28, Weight 58kg, Height 160cm, BP 115/75, Blood Sugar 5.0, Hemoglobin 12.5
+Case 2:  Age 25, Weight 62kg, Height 165cm, BP 110/70, Blood Sugar 4.8, Hemoglobin 12.0
+Case 3:  Age 30, Weight 65kg, Height 162cm, BP 118/76, Blood Sugar 5.2, Hemoglobin 11.8
+Case 4:  Age 26, Weight 55kg, Height 158cm, BP 112/72, Blood Sugar 5.1, Hemoglobin 12.2
+Case 5:  Age 29, Weight 60kg, Height 161cm, BP 116/74, Blood Sugar 4.9, Hemoglobin 11.5
+Case 6:  Age 27, Weight 57kg, Height 159cm, BP 114/73, Blood Sugar 5.3, Hemoglobin 12.3
+Case 7:  Age 24, Weight 64kg, Height 166cm, BP 117/75, Blood Sugar 5.0, Hemoglobin 11.9
+Case 8:  Age 31, Weight 67kg, Height 165cm, BP 119/77, Blood Sugar 5.4, Hemoglobin 12.1
+Case 9:  Age 28, Weight 59kg, Height 161cm, BP 113/71, Blood Sugar 4.8, Hemoglobin 12.4
+Case 10: Age 26, Weight 61kg, Height 163cm, BP 115/74, Blood Sugar 5.2, Hemoglobin 11.7

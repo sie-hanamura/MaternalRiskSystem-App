@@ -1,0 +1,10 @@
+Case 11: Age 35, Weight 75kg, Height 165cm, BP 130/85, Blood Sugar 6.5, Hemoglobin 10.8
+Case 12: Age 38, Weight 78kg, Height 166cm, BP 135/87, Blood Sugar 6.2, Hemoglobin 10.5
+Case 13: Age 19, Weight 72kg, Height 165cm, BP 128/84, Blood Sugar 6.8, Hemoglobin 10.2
+Case 14: Age 36, Weight 74kg, Height 166cm, BP 132/86, Blood Sugar 6.4, Hemoglobin 10.9
+Case 15: Age 37, Weight 80kg, Height 168cm, BP 134/88, Blood Sugar 6.7, Hemoglobin 10.6
+Case 16: Age 40, Weight 70kg, Height 164cm, BP 129/83, Blood Sugar 6.3, Hemoglobin 10.4
+Case 17: Age 18, Weight 76kg, Height 166cm, BP 133/85, Blood Sugar 6.6, Hemoglobin 10.7
+Case 18: Age 35, Weight 82kg, Height 169cm, BP 136/89, Blood Sugar 6.9, Hemoglobin 10.3
+Case 19: Age 39, Weight 73kg, Height 166cm, BP 131/84, Blood Sugar 6.1, Hemoglobin 10.8
+Case 20: Age 36, Weight 79kg, Height 168cm, BP 130/86, Blood Sugar 6.5, Hemoglobin 10.5
