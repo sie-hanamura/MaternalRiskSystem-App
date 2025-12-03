@@ -9,18 +9,19 @@ import os
 import pickle
 import json
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Fix Windows console encoding for Unicode characters
 if sys.platform == 'win32':
     import codecs
     sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
     sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QFileDialog
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QMessageBox, QFileDialog,
+                             QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton)
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWebChannel import QWebChannel
-from PyQt5.QtCore import QUrl, pyqtSlot, QObject, pyqtSignal, Qt
-from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import QUrl, pyqtSlot, QObject, pyqtSignal, Qt, QPoint, QSize, QEvent
+from PyQt5.QtGui import QIcon, QPainterPath, QRegion
 
 # PDF generation
 from reportlab.lib.pagesizes import letter, A4
@@ -465,11 +466,12 @@ class PDFReportGenerator:
 
 class Backend(QObject):
     """Python backend - handles all ML logic and data operations"""
-    
+
     results_ready = pyqtSignal(str)
-    
-    def __init__(self):
+
+    def __init__(self, main_window=None):
         super().__init__()
+        self.main_window = main_window
         self.load_models()
         self.risk_labels = {0: 'Low', 1: 'Moderate', 2: 'High'}
         self.current_patient_data = {}
@@ -658,49 +660,71 @@ class Backend(QObject):
                 'patient_id': f"P-{datetime.now().year}-0001"  # Fallback
             })
 
-    @pyqtSlot(str, str, int, float, float, float, float, float, str, float, str, 'QVariant', result=str)
-    def save_assessment(self, patient_id, health_worker, age, bmi, systolic,
-                        diastolic, blood_sugar, hemoglobin, risk_level,
-                        confidence, model_used, lab_available):
+    @pyqtSlot(str, result=str)
+    def save_assessment(self, json_data):
         """Save assessment to CSV with proper type handling
 
         Args:
-            patient_id (str): Patient identifier
-            health_worker (str): Health worker name
-            age (int): Patient age
-            bmi (float): Body Mass Index
-            systolic (float): Systolic blood pressure
-            diastolic (float): Diastolic blood pressure
-            blood_sugar (float): Blood sugar level
-            hemoglobin (float): Hemoglobin level
-            risk_level (str): Risk assessment result
-            confidence (float): Confidence percentage
-            model_used (str): Model identifier
-            lab_available (QVariant): Any type - 1/0, true/false, or boolean from JavaScript
+            json_data (str): JSON string containing all assessment data with fields:
+                - patient_id (str): Patient identifier
+                - health_worker (str): Health worker name
+                - age (int): Patient age
+                - bmi (float): Body Mass Index
+                - systolic (float): Systolic blood pressure
+                - diastolic (float): Diastolic blood pressure
+                - blood_sugar (float): Blood sugar level
+                - hemoglobin (float): Hemoglobin level
+                - risk_level (str): Risk assessment result
+                - confidence (float): Confidence percentage
+                - model_used (str): Model identifier
+                - lab_available (bool/str): Laboratory availability
 
         Returns:
             str: JSON response with success/error status
         """
         try:
-            # Debug print - verify method is being called
+            # Parse JSON string to extract data
             print(f"\n{'='*60}")
             print(f"✓ save_assessment METHOD CALLED SUCCESSFULLY")
-            print(f"patient_id: {patient_id!r} ({type(patient_id).__name__})")
-            print(f"health_worker: {health_worker!r} ({type(health_worker).__name__})")
-            print(f"age: {age!r} ({type(age).__name__})")
-            print(f"bmi: {bmi!r} ({type(bmi).__name__})")
-            print(f"systolic: {systolic!r} ({type(systolic).__name__})")
-            print(f"diastolic: {diastolic!r} ({type(diastolic).__name__})")
-            print(f"blood_sugar: {blood_sugar!r} ({type(blood_sugar).__name__})")
-            print(f"hemoglobin: {hemoglobin!r} ({type(hemoglobin).__name__})")
-            print(f"risk_level: {risk_level!r} ({type(risk_level).__name__})")
-            print(f"confidence: {confidence!r} ({type(confidence).__name__})")
-            print(f"model_used: {model_used!r} ({type(model_used).__name__})")
-            print(f"lab_available: {lab_available!r} ({type(lab_available).__name__})")
+            print(f"Received JSON: {json_data!r}")
             print(f"{'='*60}\n")
 
-            # Convert lab_available from int (0/1) to boolean
-            lab_bool = bool(lab_available)
+            data = json.loads(json_data)
+
+            # Extract fields from JSON
+            patient_id = data.get('patient_id', 'N/A')
+            health_worker = data.get('health_worker', 'N/A')
+            age = data.get('age', 25)
+            bmi = data.get('bmi', 0.0)
+            systolic = data.get('systolic', 120)
+            diastolic = data.get('diastolic', 80)
+            blood_sugar = data.get('blood_sugar', 0.0)
+            hemoglobin = data.get('hemoglobin', 0.0)
+            risk_level = data.get('risk_level', 'Unknown')
+            confidence = data.get('confidence', 0.0)
+            model_used = data.get('model_used', 'Unknown')
+            lab_available = data.get('lab_available', False)
+
+            # Debug print - verify data extraction
+            print(f"Extracted data:")
+            print(f"  patient_id: {patient_id!r} ({type(patient_id).__name__})")
+            print(f"  health_worker: {health_worker!r} ({type(health_worker).__name__})")
+            print(f"  age: {age!r} ({type(age).__name__})")
+            print(f"  bmi: {bmi!r} ({type(bmi).__name__})")
+            print(f"  systolic: {systolic!r} ({type(systolic).__name__})")
+            print(f"  diastolic: {diastolic!r} ({type(diastolic).__name__})")
+            print(f"  blood_sugar: {blood_sugar!r} ({type(blood_sugar).__name__})")
+            print(f"  hemoglobin: {hemoglobin!r} ({type(hemoglobin).__name__})")
+            print(f"  risk_level: {risk_level!r} ({type(risk_level).__name__})")
+            print(f"  confidence: {confidence!r} ({type(confidence).__name__})")
+            print(f"  model_used: {model_used!r} ({type(model_used).__name__})")
+            print(f"  lab_available: {lab_available!r} ({type(lab_available).__name__})")
+
+            # Convert lab_available to boolean (handles bool, string "1"/"0", or "true"/"false")
+            if isinstance(lab_available, str):
+                lab_bool = lab_available in ("1", "true", "True", "yes", "Yes")
+            else:
+                lab_bool = bool(lab_available)
 
             record = {
                 'Timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -750,80 +774,402 @@ class Backend(QObject):
         try:
             if not os.path.exists('assessment_history.csv'):
                 return json.dumps([])
-            
+
             # Read CSV and handle mixed types properly
             df = pd.read_csv('assessment_history.csv', keep_default_na=True)
-            
+
             # Replace NaN/None with 'N/A' for display purposes
             df = df.fillna('N/A')
-            
+
             # Convert to dict and return as JSON
             records = df.to_dict('records')
             return json.dumps(records)
-            
+
         except Exception as e:
             import traceback
             error_msg = traceback.format_exc()
             print(f"Error loading history: {error_msg}")
             return json.dumps([])
 
+    @pyqtSlot(result=str)
+    def get_dashboard_stats(self):
+        """Calculate statistics from assessment history for dashboard"""
+        try:
+            if not os.path.exists('assessment_history.csv'):
+                return json.dumps({
+                    'total_assessments': 0,
+                    'high_risk_count': 0,
+                    'high_risk_percentage': 0,
+                    'avg_confidence': 0,
+                    'recent_activity': 0,
+                    'risk_distribution': {'Low': 0, 'Moderate': 0, 'High': 0},
+                    'weekly_assessments': [],
+                    'risk_factors': []
+                })
+
+            df = pd.read_csv('assessment_history.csv')
+
+            # Basic stats
+            total = len(df)
+            high_risk = len(df[df['Risk_Level'] == 'High'])
+
+            # Average confidence (remove % sign and convert to float)
+            df['Confidence_Value'] = df['Confidence'].str.replace('%', '').astype(float)
+            avg_conf = df['Confidence_Value'].mean()
+
+            # Recent activity (last 7 days)
+            df['Timestamp'] = pd.to_datetime(df['Timestamp'])
+            seven_days_ago = datetime.now() - timedelta(days=7)
+            recent = len(df[df['Timestamp'] >= seven_days_ago])
+
+            # Risk distribution
+            risk_dist = df['Risk_Level'].value_counts().to_dict()
+
+            # Weekly assessments (last 12 weeks)
+            df['Week'] = df['Timestamp'].dt.to_period('W')
+            weekly = df.groupby('Week').size().tail(12).to_dict()
+            weekly_data = [{'week': str(k), 'count': int(v)} for k, v in weekly.items()]
+
+            # Most common risk factors (in High risk cases only)
+            high_df = df[df['Risk_Level'] == 'High']
+            risk_factors = []
+
+            if not high_df.empty:
+                # BMI >= 30
+                high_bmi = len(high_df[high_df['BMI'] >= 30])
+                if high_bmi > 0:
+                    risk_factors.append({
+                        'factor': 'High BMI (≥30 kg/m²)',
+                        'count': high_bmi,
+                        'percentage': round(high_bmi / len(high_df) * 100, 1)
+                    })
+
+                # High BP (≥140 or ≥90)
+                high_bp = len(high_df[(high_df['SystolicBP'] >= 140) | (high_df['DiastolicBP'] >= 90)])
+                if high_bp > 0:
+                    risk_factors.append({
+                        'factor': 'Hypertension (BP ≥140/90)',
+                        'count': high_bp,
+                        'percentage': round(high_bp / len(high_df) * 100, 1)
+                    })
+
+                # High Blood Sugar (≥7.0) - only if available
+                if 'Blood_Sugar' in high_df.columns:
+                    high_bs = len(high_df[high_df['Blood_Sugar'] >= 7.0])
+                    if high_bs > 0:
+                        risk_factors.append({
+                            'factor': 'High Blood Sugar (≥7.0 mmol/L)',
+                            'count': high_bs,
+                            'percentage': round(high_bs / len(high_df) * 100, 1)
+                        })
+
+                # Low Hemoglobin (<9.5) - only if available
+                if 'Hemoglobin' in high_df.columns:
+                    low_hb = len(high_df[high_df['Hemoglobin'] < 9.5])
+                    if low_hb > 0:
+                        risk_factors.append({
+                            'factor': 'Severe Anemia (Hb <9.5 g/dL)',
+                            'count': low_hb,
+                            'percentage': round(low_hb / len(high_df) * 100, 1)
+                        })
+
+            # Sort by count descending
+            risk_factors.sort(key=lambda x: x['count'], reverse=True)
+
+            return json.dumps({
+                'total_assessments': int(total),
+                'high_risk_count': int(high_risk),
+                'high_risk_percentage': round(high_risk / total * 100, 1) if total > 0 else 0,
+                'avg_confidence': round(avg_conf, 1),
+                'recent_activity': int(recent),
+                'risk_distribution': {k: int(v) for k, v in risk_dist.items()},
+                'weekly_assessments': weekly_data,
+                'risk_factors': risk_factors[:5]  # Top 5
+            })
+
+        except Exception as e:
+            import traceback
+            print(f"Dashboard stats error: {traceback.format_exc()}")
+            return json.dumps({'error': str(e)})
+
+    @pyqtSlot()
+    def minimize_window(self):
+        """Minimize window - called from JavaScript"""
+        if self.main_window:
+            self.main_window.showMinimized()
+
+    @pyqtSlot()
+    def maximize_window(self):
+        """Toggle maximize/restore - called from JavaScript"""
+        if self.main_window:
+            self.main_window.toggle_maximize()
+
+    @pyqtSlot()
+    def close_window(self):
+        """Close window - called from JavaScript"""
+        if self.main_window:
+            self.main_window.close()
+
+    @pyqtSlot(int, int)
+    def start_window_drag(self, x, y):
+        """Start window drag - called from JavaScript"""
+        if self.main_window:
+            self.main_window.drag_start_pos = QPoint(x, y)
+
+    @pyqtSlot(int, int)
+    def move_window(self, global_x, global_y):
+        """Move window during drag - called from JavaScript"""
+        if self.main_window and self.main_window.drag_start_pos and not self.main_window.is_maximized:
+            self.main_window.move(global_x - self.main_window.drag_start_pos.x(),
+                                 global_y - self.main_window.drag_start_pos.y())
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle(" ")
+
+        # Frameless window setup
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+
+        # Window properties
         self.setGeometry(100, 50, 1400, 900)
-        
-        # Set window icon
         if os.path.exists('assets/icon.png'):
             self.setWindowIcon(QIcon('assets/icon.png'))
-        
-        # Apply modern healthcare title bar
-        self.apply_modern_titlebar()
-        
+
+        # Track drag position and maximized state
+        self.drag_pos = QPoint()
+        self.drag_start_pos = None
+        self.is_maximized = False
+        self.normal_geometry = None  # Store geometry before maximizing
+
+        # Create central container widget with rounded corners
+        self.central_container = QWidget()
+        self.central_container.setObjectName("centralContainer")
+        self.central_container.setStyleSheet("""
+            #centralContainer {
+                background: white;
+                border-radius: 16px;
+            }
+        """)
+
+        # Main layout
+        container_layout = QVBoxLayout(self.central_container)
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setSpacing(0)
+
+        # Create invisible title bar for window dragging functionality
+        self.title_bar = self.create_title_bar()
+        self.title_bar.setFixedHeight(0)
+        self.title_bar.setVisible(False)
+        container_layout.addWidget(self.title_bar)
+
         # Create web view
         self.browser = QWebEngineView()
-        
+        self.browser.setStyleSheet("""
+            QWebEngineView {
+                background: transparent;
+                border-radius: 16px;
+            }
+        """)
+
         # Set up Python ↔ JavaScript bridge
-        self.backend = Backend()
+        self.backend = Backend(main_window=self)
         self.channel = QWebChannel()
         self.channel.registerObject('backend', self.backend)
         self.browser.page().setWebChannel(self.channel)
-        
+
         # Load local HTML UI
         html_path = os.path.join(os.getcwd(), 'ui', 'index.html')
         self.browser.load(QUrl.fromLocalFile(html_path))
-        self.browser.page().profile().clearHttpCache()  
-        
-        self.setCentralWidget(self.browser)
-    
-    def apply_modern_titlebar(self):
-        """Apply modern healthcare-style title bar with light teal color"""
-        try:
-            if sys.platform == 'win32':
-                try:
-                    from ctypes import windll, c_int, byref, sizeof
-                    from ctypes.wintypes import DWORD
-                    
-                    hwnd = int(self.winId())
-                    
-                    # Light Teal Title Bar - RGB: #E3F5F4 = BGR: 0x00F4F5E3
-                    # This complements your #36ABA3 sidebar perfectly
-                    color = DWORD(0x00F4F5E3)
-                    
-                    # Apply custom title bar color
-                    windll.dwmapi.DwmSetWindowAttribute(hwnd, 35, byref(color), sizeof(color))
-                    
-                    # Use light mode for dark text on light background
-                    light_mode = c_int(0)
-                    windll.dwmapi.DwmSetWindowAttribute(hwnd, 20, byref(light_mode), sizeof(light_mode))
-                    
-                    print("✓ Modern healthcare title bar applied (Light Teal)")
-                except Exception as e:
-                    print(f"Note: Could not apply custom title bar: {e}")
-        except Exception as e:
-            print(f"Note: Modern styling not available: {e}")
+        self.browser.page().profile().clearHttpCache()
 
+        container_layout.addWidget(self.browser)
+
+        # Set central widget
+        self.setCentralWidget(self.central_container)
+
+        # Apply initial rounded corners
+        self.update_window_shape()
+
+        print("✓ Modern frameless window initialized")
+
+    def update_window_shape(self):
+        """Apply rounded corners mask when window is not maximized"""
+        if not self.is_maximized:
+            # Apply rounded corners to the entire window
+            path = QPainterPath()
+            path.addRoundedRect(0, 0, self.width(), self.height(), 16, 16)
+            region = QRegion(path.toFillPolygon().toPolygon())
+            self.setMask(region)
+        else:
+            # Remove mask when maximized (square corners)
+            self.clearMask()
+
+    def update_maximize_icon(self):
+        """Update maximize/restore button icon based on window state"""
+        if self.is_maximized:
+            # Show restore icon
+            if os.path.exists('assets/restore-icon.png'):
+                self.max_btn.setIcon(QIcon('assets/restore-icon.png'))
+                self.max_btn.setIconSize(QSize(16, 16))
+            else:
+                self.max_btn.setText("❐")
+        else:
+            # Show maximize icon
+            if os.path.exists('assets/maximize-icon.png'):
+                self.max_btn.setIcon(QIcon('assets/maximize-icon.png'))
+                self.max_btn.setIconSize(QSize(16, 16))
+            else:
+                self.max_btn.setText("□")
+
+    def changeEvent(self, event):
+        """Handle window state changes (maximize/restore) - SINGLE SOURCE OF TRUTH"""
+        if event.type() == QEvent.WindowStateChange:
+            if self.windowState() & Qt.WindowMaximized:
+                # Window was maximized
+                self.is_maximized = True
+                self.clearMask()
+                # Remove rounded corners when maximized
+                self.central_container.setStyleSheet("""
+                    #centralContainer {
+                        background: white;
+                        border-radius: 0px;
+                    }
+                """)
+                # Update button icon
+                self.update_maximize_icon()
+            elif self.windowState() == Qt.WindowNoState:
+                # Window was restored to normal
+                self.is_maximized = False
+                self.update_window_shape()
+                # Restore rounded corners
+                self.central_container.setStyleSheet("""
+                    #centralContainer {
+                        background: white;
+                        border-radius: 16px;
+                    }
+                """)
+                # Update button icon
+                self.update_maximize_icon()
+        super().changeEvent(event)
+
+    def create_title_bar(self):
+        """Create custom title bar with window controls"""
+        title_bar = QWidget()
+        title_bar.setFixedHeight(40)
+        title_bar.setStyleSheet("""
+            QWidget {
+                background: white;
+                border-top-left-radius: 16px;
+                border-top-right-radius: 16px;
+            }
+        """)
+
+        layout = QHBoxLayout(title_bar)
+        layout.setContentsMargins(16, 0, 4, 0)
+        layout.setSpacing(0)
+
+        # Add stretch to push buttons to the right
+        layout.addStretch()
+
+        # Window control buttons
+        btn_style = """
+            QPushButton {
+                width: 40px;
+                height: 32px;
+                border: none;
+                border-radius: 6px;
+                background: transparent;
+            }
+            QPushButton:hover {
+                background: #f3f4f6;
+            }
+        """
+
+        close_btn_style = """
+            QPushButton {
+                width: 40px;
+                height: 32px;
+                border: none;
+                border-radius: 6px;
+                background: transparent;
+            }
+            QPushButton:hover {
+                background: #ef4444;
+            }
+        """
+
+        # Minimize button
+        self.min_btn = QPushButton()
+        if os.path.exists('assets/minimize-icon.png'):
+            self.min_btn.setIcon(QIcon('assets/minimize-icon.png'))
+            self.min_btn.setIconSize(QSize(16, 16))
+        else:
+            self.min_btn.setText("−")
+        self.min_btn.setStyleSheet(btn_style)
+        self.min_btn.clicked.connect(self.showMinimized)
+
+        # Maximize/Restore button
+        self.max_btn = QPushButton()
+        self.max_btn.setStyleSheet(btn_style)
+        self.max_btn.clicked.connect(self.toggle_maximize)
+        # Icon will be set by update_maximize_icon()
+        self.update_maximize_icon()
+
+        # Close button
+        self.close_btn = QPushButton()
+        if os.path.exists('assets/close-icon.png'):
+            self.close_btn.setIcon(QIcon('assets/close-icon.png'))
+            self.close_btn.setIconSize(QSize(16, 16))
+        else:
+            self.close_btn.setText("✕")
+        self.close_btn.setStyleSheet(close_btn_style)
+        self.close_btn.clicked.connect(self.close)
+
+        # Add buttons with spacing
+        layout.addWidget(self.min_btn)
+        layout.addSpacing(4)
+        layout.addWidget(self.max_btn)
+        layout.addSpacing(4)
+        layout.addWidget(self.close_btn)
+
+        # Make title bar draggable
+        title_bar.mousePressEvent = self.title_bar_mouse_press
+        title_bar.mouseMoveEvent = self.title_bar_mouse_move
+        title_bar.mouseDoubleClickEvent = self.title_bar_double_click
+
+        return title_bar
+
+    def title_bar_mouse_press(self, event):
+        """Handle mouse press on title bar for dragging"""
+        if event.button() == Qt.LeftButton:
+            self.drag_pos = event.globalPos() - self.frameGeometry().topLeft()
+            event.accept()
+
+    def title_bar_mouse_move(self, event):
+        """Handle mouse move on title bar for dragging"""
+        if event.buttons() == Qt.LeftButton and not self.is_maximized:
+            self.move(event.globalPos() - self.drag_pos)
+            event.accept()
+
+    def title_bar_double_click(self, event):
+        """Handle double-click on title bar to maximize/restore"""
+        if event.button() == Qt.LeftButton:
+            self.toggle_maximize()
+            event.accept()
+
+    def toggle_maximize(self):
+        """Toggle between maximized and normal window state"""
+        # Check Qt's actual window state
+        if self.windowState() & Qt.WindowMaximized:
+            # Currently maximized - restore to normal
+            self.showNormal()
+            # changeEvent will handle state update and icon change
+        else:
+            # Currently normal - maximize
+            self.showMaximized()
+            # changeEvent will handle state update and icon change
 
 def main():
     app = QApplication(sys.argv)

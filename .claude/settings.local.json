@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(python app.py:*)",
-      "Bash(python maternal_risk_app.py:*)"
+      "Bash(python maternal_risk_app.py:*)",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []

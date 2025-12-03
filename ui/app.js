@@ -19,6 +19,7 @@ const translations = {
 
         // Navigation
         'nav-new-assessment': 'New Assessment',
+        'nav-dashboard': 'Dashboard',
         'nav-history': 'History',
         'nav-about': 'About',
 
@@ -115,7 +116,20 @@ const translations = {
         'rec-high-3': 'High-risk pregnancy requiring advanced interventions',
         'rec-high-4': 'Weekly or more frequent prenatal visits required',
         'rec-high-5': 'Prepare for potential complications',
-        'rec-high-note': '⚠️ DO NOT DELAY: Refer to nearest hospital with OB-GYN services immediately.'
+        'rec-high-note': '⚠️ DO NOT DELAY: Refer to nearest hospital with OB-GYN services immediately.',
+
+        // Dashboard
+        'dashboard-total-assessments': 'Total assessments conducted',
+        'dashboard-high-risk': 'Patients requiring immediate referral',
+        'dashboard-avg-confidence': 'Average prediction confidence',
+        'dashboard-recent-activity': 'Assessments this week',
+        'dashboard-risk-distribution': 'Risk Level Distribution',
+        'dashboard-assessments-over-time': 'Assessments Over Time',
+        'dashboard-risk-factors': 'Most Common Risk Factors',
+        'dashboard-risk-factor': 'Risk Factor',
+        'dashboard-count': 'Count',
+        'dashboard-percentage': 'Percentage',
+        'dashboard-no-data': 'No data available'
     },
 
     fil: {
@@ -130,6 +144,7 @@ const translations = {
 
         // Navigation
         'nav-new-assessment': 'Bagong Pagsusuri',
+        'nav-dashboard': 'Dashboard',
         'nav-history': 'Kasaysayan',
         'nav-about': 'Tungkol',
 
@@ -226,7 +241,20 @@ const translations = {
         'rec-high-3': 'Pagbubuntis na may mataas na panganib na nangangailangan ng advanced na interbensyon',
         'rec-high-4': 'Kailangan ng lingguhang o mas madalas na prenatal visits',
         'rec-high-5': 'Maghanda para sa mga posibleng komplikasyon',
-        'rec-high-note': '⚠️ HUWAG MAGPABAYA: Dalhin kaagad sa pinakamalapit na ospital na may serbisyo ng OB-GYN.'
+        'rec-high-note': '⚠️ HUWAG MAGPABAYA: Dalhin kaagad sa pinakamalapit na ospital na may serbisyo ng OB-GYN.',
+
+        // Dashboard
+        'dashboard-total-assessments': 'Kabuuang pagsusuring isinagawa',
+        'dashboard-high-risk': 'Pasyenteng nangangailangan ng agarang referral',
+        'dashboard-avg-confidence': 'Average na katiyakan ng prediction',
+        'dashboard-recent-activity': 'Pagsusuri ngayong linggo',
+        'dashboard-risk-distribution': 'Distribusyon ng Antas ng Panganib',
+        'dashboard-assessments-over-time': 'Pagsusuri sa Paglipas ng Panahon',
+        'dashboard-risk-factors': 'Pinaka-Karaniwang Risk Factors',
+        'dashboard-risk-factor': 'Risk Factor',
+        'dashboard-count': 'Bilang',
+        'dashboard-percentage': 'Porsyento',
+        'dashboard-no-data': 'Walang available na data'
     }
 };
 
@@ -346,6 +374,46 @@ function initializeApp() {
     // Initialize language on app load
     updateLanguage();
 
+    // Custom title bar window controls
+    document.getElementById('titlebar-minimize').addEventListener('click', () => {
+        if (backend) {
+            backend.minimize_window();
+        }
+    });
+
+    document.getElementById('titlebar-maximize').addEventListener('click', () => {
+        if (backend) {
+            backend.maximize_window();
+        }
+    });
+
+    document.getElementById('titlebar-close').addEventListener('click', () => {
+        if (backend) {
+            backend.close_window();
+        }
+    });
+
+    // Title bar dragging
+    const dragRegion = document.querySelector('.titlebar-drag-region');
+    let isDragging = false;
+
+    dragRegion.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        if (backend) {
+            backend.start_window_drag(e.clientX, e.clientY);
+        }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (isDragging && backend) {
+            backend.move_window(e.screenX, e.screenY);
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
+
     // Settings dropdown button
     document.getElementById('settings-btn').addEventListener('click', function(e) {
         e.stopPropagation();
@@ -386,14 +454,21 @@ function switchView(viewName) {
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.view === viewName);
     });
-    
+
     document.querySelectorAll('.view').forEach(view => {
         view.classList.remove('active');
     });
     document.getElementById(`${viewName}-view`).classList.add('active');
-    
+
     if (viewName === 'history') {
         loadHistory();
+    } else if (viewName === 'dashboard') {
+        loadDashboard();
+    } else if (viewName === 'about') {
+        // Initialize feature importance chart when About view loads
+        setTimeout(() => {
+            initFeatureImportanceChart();
+        }, 100);
     }
 }
 
@@ -437,13 +512,15 @@ function toggleLabInputs() {
     document.getElementById('blood-sugar').disabled = !labAvailable;
     document.getElementById('hemoglobin').disabled = !labAvailable;
 
-    // Update model indicator with translation
+    // Update model indicator with translation and class
     const indicator = document.getElementById('model-indicator');
     const iconImg = '<img src="../assets/info-circle.png" alt="" class="info-icon" style="width: 16px; height: 16px; margin-right: 12px;">';
 
     if (labAvailable) {
+        indicator.className = 'model-indicator full';
         indicator.innerHTML = iconImg + '<span data-i18n="model-full">' + translations[currentLanguage]['model-full'] + '</span>';
     } else {
+        indicator.className = 'model-indicator basic';
         indicator.innerHTML = iconImg + '<span data-i18n="model-basic">' + translations[currentLanguage]['model-basic'] + '</span>';
     }
 }
@@ -654,73 +731,62 @@ function proceedWithSave(patientId, result) {
     const modelUsed = String(result.model_used);
     const labAvailable = Boolean(result.lab_available);
 
+    // Create data object with all assessment information
+    const assessmentData = {
+        patient_id: String(patientId),
+        health_worker: String(healthWorker),
+        age: parseInt(age),
+        bmi: parseFloat(bmi),
+        systolic: parseFloat(systolic),
+        diastolic: parseFloat(diastolic),
+        blood_sugar: parseFloat(bloodSugar),
+        hemoglobin: parseFloat(hemoglobin),
+        risk_level: String(riskLevel),
+        confidence: parseFloat(confidence),
+        model_used: String(modelUsed),
+        lab_available: labAvailable
+    };
+
     // Debug log
-    console.log("Saving assessment with data:", {
-        patientId,
-        healthWorker,
-        age,
-        bmi,
-        systolic,
-        diastolic,
-        bloodSugar,
-        hemoglobin,
-        riskLevel,
-        confidence,
-        modelUsed,
-        labAvailable
-    });
+    console.log("Saving assessment with data:", assessmentData);
 
-    backend.save_assessment(
-        String(patientId),
-        String(healthWorker),
-        parseInt(age),
-        parseFloat(bmi),
-        parseFloat(systolic),
-        parseFloat(diastolic),
-        parseFloat(bloodSugar),
-        parseFloat(hemoglobin),
-        String(riskLevel),
-        parseFloat(confidence),
-        String(modelUsed),
-        labAvailable ? 1 : 0,
-        function(response) {
-            console.log("=== Save Response Received ===");
-            console.log("Raw response:", response);
-            console.log("Response type:", typeof response);
-            console.log("Response length:", response ? response.length : 0);
+    // Convert to JSON string and send as single parameter
+    const jsonData = JSON.stringify(assessmentData);
+    console.log("JSON string to send:", jsonData);
 
-            try {
-                // Check for empty response
-                if (!response || (typeof response === 'string' && response.trim() === '')) {
-                    console.error('✗ Empty response from backend - slot may not have executed');
-                    throw new Error('Empty response from backend. The save_assessment method may not have been called. Check Python console for slot signature errors.');
-                }
+    backend.save_assessment(jsonData, function(response) {
+        console.log("=== Save Response Received ===");
+        console.log("Raw response:", response);
+        console.log("Response type:", typeof response);
+        console.log("Response length:", response ? response.length : 0);
 
-                // Try to parse JSON
-                const res = JSON.parse(response);
-                console.log("Parsed response:", res);
-
-                if (res.success) {
-                    alert('✓ Assessment saved successfully!\n\nPatient ID: ' + res.patient_id);
-                    console.log('✓ Assessment saved successfully');
-                } else {
-                    alert('Error saving assessment:\n' + (res.error || 'Unknown error'));
-                    console.error('Save error:', res.error);
-                    if (res.details) {
-                        console.error('Error details:', res.details);
-                    }
-                }
-            } catch (e) {
-                console.error('✗ Parse error:', e);
-                console.error('✗ Response was:', response);
-                alert('CRITICAL ERROR: Failed to save assessment.\n\n' +
-                      'Error: ' + e.message + '\n\n' +
-                      'This usually means the Python method signature does not match.\n' +
-                      'Check the Python console for "@pyqtSlot" errors.\n\n' +
-                      'Response: ' + (response || '(empty)'));
+        try {
+            // Check for empty response
+            if (!response || (typeof response === 'string' && response.trim() === '')) {
+                console.error('✗ Empty response from backend - slot may not have executed');
+                throw new Error('Empty response from backend. The save_assessment method may not have been called. Check Python console for slot signature errors.');
             }
+
+            // Try to parse JSON
+            const res = JSON.parse(response);
+            console.log("Parsed response:", res);
+
+            if (res.success) {
+                console.log('✓ Assessment saved successfully! Patient ID:', res.patient_id);
+            } else {
+                console.error('✗ Error saving assessment:', res.error || 'Unknown error');
+                if (res.details) {
+                    console.error('Error details:', res.details);
+                }
+            }
+        } catch (e) {
+            console.error('✗ CRITICAL ERROR: Failed to save assessment');
+            console.error('✗ Parse error:', e.message);
+            console.error('✗ This usually means the Python method signature does not match');
+            console.error('✗ Check the Python console for "@pyqtSlot" errors');
+            console.error('✗ Response was:', response || '(empty)');
         }
-    );
+    });
 }
 
 // ============================================
@@ -783,7 +849,7 @@ function loadHistory() {
     backend.load_history(function(historyJson) {
         const records = JSON.parse(historyJson);
         const tbody = document.getElementById('history-tbody');
-        
+
         tbody.innerHTML = records.map(record => {
             const riskClass = record.Risk_Level.toLowerCase();
             return `
@@ -802,7 +868,331 @@ function loadHistory() {
     });
 }
 
+// Global variables for charts
+let riskPieChart = null;
+let weeklyLineChart = null;
+
+// Load dashboard
+function loadDashboard() {
+    if (!backend) {
+        console.error('Backend not initialized');
+        return;
+    }
+
+    backend.get_dashboard_stats(function(statsJson) {
+        try {
+            const stats = JSON.parse(statsJson);
+
+            if (stats.error) {
+                console.error('Error loading dashboard stats:', stats.error);
+                return;
+            }
+
+            // Update summary cards
+            document.getElementById('total-assessments').textContent = stats.total_assessments;
+            document.getElementById('high-risk-count').textContent =
+                `${stats.high_risk_count} (${stats.high_risk_percentage}%)`;
+            document.getElementById('avg-confidence').textContent = `${stats.avg_confidence}%`;
+            document.getElementById('recent-activity').textContent = stats.recent_activity;
+
+            // Update risk distribution pie chart
+            updateRiskPieChart(stats.risk_distribution);
+
+            // Update weekly assessments line chart
+            updateWeeklyLineChart(stats.weekly_assessments);
+
+            // Update risk factors table
+            updateRiskFactorsTable(stats.risk_factors);
+
+        } catch (e) {
+            console.error('Error parsing dashboard stats:', e);
+        }
+    });
+}
+
+// Update risk distribution pie chart
+function updateRiskPieChart(riskDist) {
+    const ctx = document.getElementById('risk-pie-chart');
+    if (!ctx) return;
+
+    // Destroy previous chart if exists
+    if (riskPieChart) {
+        riskPieChart.destroy();
+    }
+
+    const dataValues = [
+        riskDist.Low || 0,
+        riskDist.Moderate || 0,
+        riskDist.High || 0
+    ];
+    const total = dataValues.reduce((a, b) => a + b, 0);
+
+    // Update center label
+    document.getElementById('doughnut-total').textContent = total;
+
+    const data = {
+        labels: ['Low Risk', 'Moderate Risk', 'High Risk'],
+        datasets: [{
+            data: dataValues,
+            backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    };
+
+    riskPieChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            cutout: '70%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 12,
+                        padding: 15,
+                        font: {
+                            size: 11,
+                            family: "'Segoe UI', sans-serif"
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Update weekly assessments line chart
+function updateWeeklyLineChart(weeklyData) {
+    const ctx = document.getElementById('weekly-line-chart');
+    if (!ctx) return;
+
+    // Destroy previous chart if exists
+    if (weeklyLineChart) {
+        weeklyLineChart.destroy();
+    }
+
+    const labels = weeklyData.map(item => {
+        // Format week label (e.g., "2025-W01" -> "Week 1")
+        const weekStr = item.week.toString();
+        const weekNum = weekStr.split('-W')[1] || weekStr.split('/')[1] || '?';
+        return `Week ${weekNum}`;
+    });
+
+    const counts = weeklyData.map(item => item.count);
+
+    // Create gradient
+    const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(54, 171, 163, 0.3)');
+    gradient.addColorStop(1, 'rgba(54, 171, 163, 0.0)');
+
+    const data = {
+        labels: labels,
+        datasets: [{
+            label: 'Assessments',
+            data: counts,
+            borderColor: '#36ABA3',
+            backgroundColor: gradient,
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4,
+            pointBackgroundColor: '#36ABA3',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointHoverRadius: 6
+        }]
+    };
+
+    weeklyLineChart = new Chart(ctx, {
+        type: 'line',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: {
+                        size: 13,
+                        family: "'Segoe UI', sans-serif"
+                    },
+                    bodyFont: {
+                        size: 14,
+                        family: "'Segoe UI', sans-serif"
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        font: {
+                            size: 11
+                        }
+                    },
+                    grid: {
+                        color: '#f3f4f6',
+                        drawBorder: false
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: 11
+                        }
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Update risk factors table
+function updateRiskFactorsTable(riskFactors) {
+    const tbody = document.getElementById('risk-factors-tbody');
+    if (!tbody) return;
+
+    if (!riskFactors || riskFactors.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="3" style="text-align: center; color: #9ca3af; padding: 24px;">
+                    <span data-i18n="dashboard-no-data">${translations[currentLanguage]['dashboard-no-data']}</span>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = riskFactors.map(factor => `
+        <tr>
+            <td>${factor.factor}</td>
+            <td style="font-weight: 600; color: #36ABA3;">${factor.count}</td>
+            <td class="percentage-cell">
+                <div class="percentage-bar" style="width: ${factor.percentage}%;"></div>
+                <span class="percentage-text">${factor.percentage}%</span>
+            </td>
+        </tr>
+    `).join('');
+}
+
 // Export history
 function exportHistory() {
     alert('Export feature: Use the Python application menu to export CSV files.');
+}
+
+// Feature Importance Chart
+let featureImportanceChart = null;
+
+function initFeatureImportanceChart() {
+    const ctx = document.getElementById('feature-importance-chart');
+    if (!ctx) return;
+
+    // Destroy previous chart if exists
+    if (featureImportanceChart) {
+        featureImportanceChart.destroy();
+    }
+
+    const data = {
+        labels: [
+            'BMI (Body Mass Index)',
+            'Systolic Blood Pressure',
+            'Blood Sugar Level',
+            'Hemoglobin Level',
+            'Diastolic Blood Pressure'
+        ],
+        datasets: [{
+            label: 'Relative Importance',
+            data: [100, 85, 70, 60, 50],
+            backgroundColor: [
+                'rgba(54, 171, 163, 0.9)',
+                'rgba(54, 171, 163, 0.75)',
+                'rgba(54, 171, 163, 0.6)',
+                'rgba(54, 171, 163, 0.45)',
+                'rgba(54, 171, 163, 0.3)'
+            ],
+            borderColor: '#36ABA3',
+            borderWidth: 1
+        }]
+    };
+
+    featureImportanceChart = new Chart(ctx, {
+        type: 'bar',
+        data: data,
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: {
+                        size: 13,
+                        family: "'Segoe UI', sans-serif"
+                    },
+                    bodyFont: {
+                        size: 14,
+                        family: "'Segoe UI', sans-serif"
+                    },
+                    callbacks: {
+                        label: function(context) {
+                            return 'Importance: ' + context.parsed.x + '%';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        },
+                        font: {
+                            size: 11
+                        }
+                    },
+                    grid: {
+                        color: '#f3f4f6'
+                    }
+                },
+                y: {
+                    ticks: {
+                        font: {
+                            size: 12
+                        }
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
 }
