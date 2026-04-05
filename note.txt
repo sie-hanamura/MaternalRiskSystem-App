@@ -1,0 +1,5 @@
+cd Documents\MaternalRiskSystem
+
+app.py
+
+python maternal_risk_app.py
