@@ -6,7 +6,6 @@ An AI-assisted desktop application for maternal health screening. It uses machin
 
 ## Screenshots
 
-![Home](ui/screenshots/first-page.png)
 ![Assessment Results](ui/screenshots/assessment-results.png)
 ![History](ui/screenshots/history.png)
 
