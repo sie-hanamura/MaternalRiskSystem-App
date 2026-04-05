@@ -8,3 +8,7 @@ Case 27: Age 46, Weight 100kg, Height 167cm, BP 155/102, Blood Sugar 9.8, Hemogl
 Case 28: Age 16, Weight 84kg, Height 161cm, BP 143/95, Blood Sugar 8.4, Hemoglobin 8.9
 Case 29: Age 42, Weight 91kg, Height 165cm, BP 147/97, Blood Sugar 9.2, Hemoglobin 9.4
 Case 30: Age 45, Weight 96kg, Height 164cm, BP 151/99, Blood Sugar 9.6, Hemoglobin 8.6
+−
+□
+✕
+MATERNAL RISK ASSESSMENT SYSTEM

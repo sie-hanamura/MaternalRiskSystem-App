@@ -1,5 +1,10 @@
-cd Documents\MaternalRiskSystem
+cd Desktop\MaternalRiskSystem-App-main (1)\MaternalRiskSystem-App-main
 
 app.py
 
 python maternal_risk_app.py
+
+
+MaternalRiskSystem-App-main (1)
+
+C:\Users\qsier\OneDrive\Desktop\MaternalRiskSystem-App-main (1)\MaternalRiskSystem-App-main

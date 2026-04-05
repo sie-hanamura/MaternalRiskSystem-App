@@ -1,12 +1,14 @@
 # Maternal Risk Assessment System (MRAS)
 
-An AI-assisted desktop application for maternal health screening, developed for the **Municipal Health Office Bay, Laguna, Philippines**. It uses machine learning to classify pregnant women into Low, Moderate, or High risk categories based on clinical measurements and vital signs — enabling faster triage and referral decisions at health centers and clinics.
+An AI-assisted desktop application for maternal health screening. It uses machine learning to classify pregnant women into Low, Moderate, or High risk categories based on clinical measurements and vital signs — enabling faster triage and referral decisions at health centers and clinics.
 
 ---
 
 ## Screenshots
 
-![MRAS UI](UI.jpg)
+![Home](ui/screenshots/first-page.png)
+![Assessment Results](ui/screenshots/assessment-results.png)
+![History](ui/screenshots/history.png)
 
 ---
 
@@ -157,7 +159,6 @@ This system is intended as a **decision-support tool only**. It does not replace
 
 ---
 
-## Developer
+## Version
 
-Developed for the **Municipal Health Office Bay, Laguna**  
-Version: v2.1.4
+v2.1.4
